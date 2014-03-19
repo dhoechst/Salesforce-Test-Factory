@@ -3,11 +3,12 @@ public class TestFactory {
 	
 	public static SObject createSObject(SObject sObj) {
 		// Check what type of object we are creating and add any defaults that are needed.
-		if (sObj instanceOf Account) {
-			sObj = createSObject(sObj, 'TestFactory.AccountDefaults');
-		}
-		if (sObj instanceOf Opportunity) {
-			sObj = createSObject(sObj, 'TestFactory.OpportunityDefaults');
+		String objectName = String.valueOf(sObj.getSObjectType());
+		// Construct the default values class. Salesforce doesn't allow '__' in class names
+		String defaultClassName = 'TestFactory.' + objectName.replace('__c', '') + 'Defaults';
+		// If there is a class that exists for the default values, then use them
+		if (Type.forName(defaultClassName) != null) {
+			sObj = createSObject(sObj, defaultClassName);
 		}
 		return sObj;
 	}
@@ -23,6 +24,36 @@ public class TestFactory {
 		return sObj;
 	}
 
+	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects) {
+		return createSObjectList(sObj, numberOfObjects, null);
+	}
+
+	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects, String defaultClassName) {
+		SObject[] sObjs = new SObject[]{};
+		SObject newObj;
+
+		// Get one copy of the object
+		if (defaultClassName == null) {
+			newObj = createSObject(sObj);
+		} else {
+			newObj = createSObject(sObj, defaultClassName);
+		}
+
+		// Get the name field for the object
+		String nameField = nameFieldMap.get(String.valueOf(sObj.getSObjectType()));
+		if (nameField == null) {
+			nameField = 'Name';
+		}
+
+		// Clone the object the number of times requested. Increment the name field so each record is unique
+		for (Integer i = 0; i < numberOfObjects; i++) {
+			SObject clonedSObj = newObj.clone(false, true);
+			clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
+			sObjs.add(clonedSObj);
+		}
+		return sObjs; 
+	}
+
 	private static void addFieldDefaults(SObject sObj, Map<String, Object> defaults) {
 		// Loop through the map of fields and if they are null on the object, fill them.
 		for (String field : defaults.keySet()) {
@@ -32,6 +63,12 @@ public class TestFactory {
 		}
 	}
 
+	// When we create a list of SObjects, we need to 
+	private static Map<String, String> nameFieldMap = new Map<String, String> {
+		'Contact' => 'LastName',
+		'Case' => 'Subject'
+	};
+
 	public class TestFactoryException extends Exception {}
 
 	// Use the FieldDefaults interface to set up values you want to default in for all objects.
@@ -39,10 +76,22 @@ public class TestFactory {
 		Map<String, Object> getFieldDefaults();
 	}
 
+	// To specify defaults for objects, use the naming convention [ObjectName]Defaults.
+	// For custom objects, omit the __c from the Object Name
+
 	public class AccountDefaults implements FieldDefaults{
 		public Map<String, Object> getFieldDefaults() {
 			return new Map<String, Object> {
 				'Name' => 'Test Account'
+			};
+		}
+	}
+
+	public class ContactDefaults implements FieldDefaults{
+		public Map<String, Object> getFieldDefaults() {
+			return new Map<String, Object> {
+				'FirstName' => 'First',
+				'LastName' => 'Last'
 			};
 		}
 	}
@@ -53,6 +102,14 @@ public class TestFactory {
 				'Name' => 'Test Opportunity',
 				'StageName' => 'Closed Won',
 				'CloseDate' => System.today()
+			};
+		}
+	}
+
+	public class CaseDefaults implements FieldDefaults{
+		public Map<String, Object> getFieldDefaults() {
+			return new Map<String, Object> {
+				'Subject' => 'Test Case'
 			};
 		}
 	}
