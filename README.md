@@ -3,7 +3,10 @@ Salesforce-Test-Factory
 
 SObject factory that can be used in unit tests to create test data.
 
-Deploy to your Salesforce org: https://githubsfdeploy.herokuapp.com/?owner=dhoechst&repo=Salesforce-Test-Factory
+<a href="https://githubsfdeploy.herokuapp.com/?owner=dhoechst&repo=Salesforce-Test-Factory">
+  <img alt="Deploy to Salesforce"
+       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/src/main/webapp/resources/img/deploy.png">
+</a>
 
 Usage:
 
@@ -18,4 +21,6 @@ Usage:
     Account a = (Account)TestFactory.createSObject(new Account(), 'TestFactory.AccountDefaults');
     
     // Finally, get a bunch of records for testing bulk
-    Account[] aList = (Account[])TestFactory.createSObjectList(new Account(), 200);
+    Account acc = new Account(Name = 'Names rock',BillingStreet = 'street',BillingState='state',BillingCity='city',BillingPostalCode='12345');
+    Account[] accounts = (Account[])TestFactory.createNsObjects(acc,15);
+    insert accounts;
