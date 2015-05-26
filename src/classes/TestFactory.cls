@@ -1,6 +1,6 @@
 @isTest
 public class TestFactory {
-	
+
 	public static SObject createSObject(SObject sObj) {
 		// Check what type of object we are creating and add any defaults that are needed.
 		String objectName = String.valueOf(sObj.getSObjectType());
@@ -11,6 +11,14 @@ public class TestFactory {
 			sObj = createSObject(sObj, defaultClassName);
 		}
 		return sObj;
+	}
+
+	public static SObject createSObject(SObject sObj, Boolean doInsert) {
+		SObject retObject = createSObject(sObj);
+		if (doInsert) {
+			insert retObject;
+		}
+		return retObject;
 	}
 
 	public static SObject createSObject(SObject sObj, String defaultClassName) {
@@ -24,12 +32,36 @@ public class TestFactory {
 		return sObj;
 	}
 
+	public static SObject createSObject(SObject sObj, String defaultClassName, Boolean doInsert) {
+		SObject retObject = createSObject(sObj, defaultClassName);
+		if (doInsert) {
+			insert retObject;
+		}
+		return retObject;
+	}
+
 	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects) {
-		return createSObjectList(sObj, numberOfObjects, null);
+		return createSObjectList(sObj, numberOfObjects, (String)null);
+	}
+
+	public static SObject[] createSObjectList(SObject sObj, Integer numberOfObjects, Boolean doInsert) {
+		SObject[] retList = createSObjectList(sObj, numberOfObjects, (String)null);
+		if (doInsert) {
+			insert retList;
+		}
+		return retList;
+	}
+
+	public static SObject[] createSObjectList(SObject sObj, Integer numberOfObjects, String defaultClassName, Boolean doInsert) {
+		SObject[] retList = createSObjectList(sObj, numberOfObjects, defaultClassName);
+		if (doInsert) {
+			insert retList;
+		}
+		return retList;
 	}
 
 	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects, String defaultClassName) {
-		SObject[] sObjs = new SObject[]{};
+		SObject[] sObjs = new SObject[] {};
 		SObject newObj;
 
 		// Get one copy of the object
@@ -51,7 +83,7 @@ public class TestFactory {
 			clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
 			sObjs.add(clonedSObj);
 		}
-		return sObjs; 
+		return sObjs;
 	}
 
 	private static void addFieldDefaults(SObject sObj, Map<String, Object> defaults) {
@@ -63,7 +95,7 @@ public class TestFactory {
 		}
 	}
 
-	// When we create a list of SObjects, we need to 
+	// When we create a list of SObjects, we need to
 	private static Map<String, String> nameFieldMap = new Map<String, String> {
 		'Contact' => 'LastName',
 		'Case' => 'Subject'
@@ -79,7 +111,7 @@ public class TestFactory {
 	// To specify defaults for objects, use the naming convention [ObjectName]Defaults.
 	// For custom objects, omit the __c from the Object Name
 
-	public class AccountDefaults implements FieldDefaults{
+	public class AccountDefaults implements FieldDefaults {
 		public Map<String, Object> getFieldDefaults() {
 			return new Map<String, Object> {
 				'Name' => 'Test Account'
@@ -87,7 +119,7 @@ public class TestFactory {
 		}
 	}
 
-	public class ContactDefaults implements FieldDefaults{
+	public class ContactDefaults implements FieldDefaults {
 		public Map<String, Object> getFieldDefaults() {
 			return new Map<String, Object> {
 				'FirstName' => 'First',
@@ -96,7 +128,7 @@ public class TestFactory {
 		}
 	}
 
-	public class OpportunityDefaults implements FieldDefaults{
+	public class OpportunityDefaults implements FieldDefaults {
 		public Map<String, Object> getFieldDefaults() {
 			return new Map<String, Object> {
 				'Name' => 'Test Opportunity',
@@ -106,7 +138,7 @@ public class TestFactory {
 		}
 	}
 
-	public class CaseDefaults implements FieldDefaults{
+	public class CaseDefaults implements FieldDefaults {
 		public Map<String, Object> getFieldDefaults() {
 			return new Map<String, Object> {
 				'Subject' => 'Test Case'

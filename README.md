@@ -19,3 +19,8 @@ Usage:
     
     // Finally, get a bunch of records for testing bulk
     Account[] aList = (Account[])TestFactory.createSObjectList(new Account(), 200);
+
+    // You can optionally insert records as created like this:
+    // Note the final parameter of true.
+    Account a = (Account) TestFactory.createSObject(new Account(), true);
+	Contact c = (Contact) TestFactory.createSObject(new Contact(AccountID = a.Id), true);
