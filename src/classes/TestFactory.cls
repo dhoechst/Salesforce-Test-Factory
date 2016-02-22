@@ -5,7 +5,7 @@ public class TestFactory {
 		// Check what type of object we are creating and add any defaults that are needed.
 		String objectName = String.valueOf(sObj.getSObjectType());
 		// Construct the default values class. Salesforce doesn't allow '__' in class names
-		String defaultClassName = 'TestFactory.' + objectName.replace('__c', '') + 'Defaults';
+		String defaultClassName = 'TestFactory.' + objectName.replaceAll('__c|__', '') + 'Defaults';
 		// If there is a class that exists for the default values, then use them
 		if (Type.forName(defaultClassName) != null) {
 			sObj = createSObject(sObj, defaultClassName);
