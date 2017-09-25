@@ -86,9 +86,9 @@ public class TestFactory {
 		return sObjs;
 	}
 
-	private static void addFieldDefaults(SObject sObj, Map<String, Object> defaults) {
+	private static void addFieldDefaults(SObject sObj, Map<Schema.SObjectField, Object> defaults) {
 		// Loop through the map of fields and if they are null on the object, fill them.
-		for (String field : defaults.keySet()) {
+		for (Schema.SObjectField field : defaults.keySet()) {
 			if (sObj.get(field) == null) {
 				sObj.put(field, defaults.get(field));
 			}
@@ -105,43 +105,43 @@ public class TestFactory {
 
 	// Use the FieldDefaults interface to set up values you want to default in for all objects.
 	public interface FieldDefaults {
-		Map<String, Object> getFieldDefaults();
+		Map<Schema.SObjectField, Object> getFieldDefaults();
 	}
 
 	// To specify defaults for objects, use the naming convention [ObjectName]Defaults.
 	// For custom objects, omit the __c from the Object Name
 
 	public class AccountDefaults implements FieldDefaults {
-		public Map<String, Object> getFieldDefaults() {
-			return new Map<String, Object> {
-				'Name' => 'Test Account'
+		public Map<Schema.SObjectField, Object> getFieldDefaults() {
+			return new Map<Schema.SObjectField, Object> {
+				Account.Name => 'Test Account'
 			};
 		}
 	}
 
 	public class ContactDefaults implements FieldDefaults {
-		public Map<String, Object> getFieldDefaults() {
-			return new Map<String, Object> {
-				'FirstName' => 'First',
-				'LastName' => 'Last'
+		public Map<Schema.SObjectField, Object> getFieldDefaults() {
+			return new Map<Schema.SObjectField, Object> {
+				Contact.FirstName => 'First',
+				Contact.LastName => 'Last'
 			};
 		}
 	}
 
 	public class OpportunityDefaults implements FieldDefaults {
-		public Map<String, Object> getFieldDefaults() {
-			return new Map<String, Object> {
-				'Name' => 'Test Opportunity',
-				'StageName' => 'Closed Won',
-				'CloseDate' => System.today()
+		public Map<Schema.SObjectField, Object> getFieldDefaults() {
+			return new Map<Schema.SObjectField, Object> {
+				Opportunity.Name => 'Test Opportunity',
+				Opportunity.StageName => 'Closed Won',
+				Opportunity.CloseDate => System.today()
 			};
 		}
 	}
 
 	public class CaseDefaults implements FieldDefaults {
-		public Map<String, Object> getFieldDefaults() {
-			return new Map<String, Object> {
-				'Subject' => 'Test Case'
+		public Map<Schema.SObjectField, Object> getFieldDefaults() {
+			return new Map<Schema.SObjectField, Object> {
+				Case.Subject => 'Test Case'
 			};
 		}
 	}
