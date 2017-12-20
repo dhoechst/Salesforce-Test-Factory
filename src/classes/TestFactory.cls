@@ -88,8 +88,9 @@ public class TestFactory {
 
 	private static void addFieldDefaults(SObject sObj, Map<Schema.SObjectField, Object> defaults) {
 		// Loop through the map of fields and if they are null on the object, fill them.
-		for (Schema.SObjectField field : defaults.keySet()) {
-			if (sObj.get(field) == null) {
+		Map<String, Object> populatedFields = sObj.getPopulatedFieldsAsMap();
+        	for (Schema.SObjectField field : defaults.keySet()) {
+			if (!populatedFields.containsKey(String.valueOf(field))) {
 				sObj.put(field, defaults.get(field));
 			}
 		}
