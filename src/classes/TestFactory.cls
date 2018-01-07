@@ -1,6 +1,8 @@
 @isTest
 public class TestFactory {
 
+	public static List<Schema.DescribeFieldResult> requiredFields;
+
 	public static SObject createSObject(SObject sObj) {
 		// Check what type of object we are creating and add any defaults that are needed.
 		String objectName = String.valueOf(sObj.getSObjectType());
@@ -37,6 +39,49 @@ public class TestFactory {
 		if (doInsert) {
 			insert retObject;
 		}
+		return retObject;
+	}
+
+	 /**
+	 * The method automatically setups random values for required custom fields for the given object
+	 * But only if the user didn't input values or default value doesn't exist.
+	 * As a first step, only these types are supported: 'STRING', 'TEXTAREA', 'EMAIL', 'URL'
+	 * More to be supported in the future: base64, currency, Date, Datetime, Double, Integer, Multipicklist, Picklist, percent
+	 * @param  sObj                    sobject token
+	 * @return                         generic sobject for testing purposes, with custom required fields randomly populated
+	 */
+	public static SObject createSObjectRequired(SObject sObj) {
+		SObject retObject = createSObject(sObj);
+
+		Map<String, Object> map_populatedFields = retObject.getPopulatedFieldsAsMap();
+		if (requiredFields == null) {
+			requiredFields = getRequiredCustomFields(retObject);
+		}
+
+		for (Schema.DescribeFieldResult fieldDesc : requiredFields) {
+			Schema.SObjectField fieldToken = fieldDesc.getSObjectField();
+			String currentType = fieldDesc.getType().name().toUpperCase();
+
+			// If the required custom field is already populated, continue
+			if (!map_populatedFields.containsKey(String.valueOf(fieldToken))) {
+				Object randomFieldVal;
+				// If current type is String
+				if (currentType == 'STRING' || currentType == 'TEXTAREA') {
+					Integer fieldLength = fieldDesc.getLength() > 20 ? 20 : fieldDesc.getLength();
+					randomFieldVal = getRandomStr(fieldLength);
+				}
+				// If current type is email
+				else if (currentType == 'EMAIL') {
+					randomFieldVal = getRandomStr(10) + '@' + getRandomStr(7) + '.com';
+				}
+				else if (currentType == 'URL') {
+					randomFieldVal = 'http://' + getRandomStr(10) + '.com';
+				}
+				// Finally, populate the record with the required fields
+				retObject.put(fieldToken, randomFieldVal);
+			}	
+		}
+
 		return retObject;
 	}
 
@@ -81,6 +126,24 @@ public class TestFactory {
 		for (Integer i = 0; i < numberOfObjects; i++) {
 			SObject clonedSObj = newObj.clone(false, true);
 			clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
+			sObjs.add(clonedSObj);
+		}
+		return sObjs;
+	}
+
+	public static SObject[] createSObjectRequiredList(Sobject sObj, Integer numberOfObjects) {
+		SObject[] sObjs = new SObject[] {};
+
+		// Get the name field for the object
+		String nameField = nameFieldMap.get(String.valueOf(sObj.getSObjectType()));
+		if (nameField == null) {
+			nameField = 'Name';
+		}
+
+		for (Integer i = 0; i < numberOfObjects; i++) {
+			SObject clonedSObj = sObj.clone(false, true);
+			clonedSObj = createSObjectRequired(clonedSObj);
+			clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + '' + i);
 			sObjs.add(clonedSObj);
 		}
 		return sObjs;
@@ -146,4 +209,42 @@ public class TestFactory {
 			};
 		}
 	}
+
+	/**
+	 * Generate a random String given its size
+	 * @param  size: length of the String
+	 * @return     Random String
+	 */
+    public static String getRandomStr(Integer size) {
+        final String lst_range = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz';
+        String randomStr = '';
+        for(Integer i = 0; i < size; i++) {
+           Integer randomIndex = Math.mod(Math.abs(Crypto.getRandomInteger()), lst_range.length());
+           randomStr += lst_range.substring(randomIndex, randomIndex + 1);
+        }
+        return randomStr; 
+    }
+
+    /**
+     * Given a sobject, the method provides the list of required custom fields except formulas, auto-number
+     * and field with already a default value defined
+     * @param  sObj sobject token
+     * @return      List<Schema.DescribeFieldResult> of required custom fields
+     */
+    public static List<Schema.DescribeFieldResult> getRequiredCustomFields(SObject sObj) {
+    	String objectName = String.valueOf(sObj.getSObjectType());
+		List<Schema.DescribeFieldResult> lst_requiredFields = new List<Schema.DescribeFieldResult>();
+		List<Schema.SObjectField> lst_fields = Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap().values();
+		
+		for(Schema.SObjectField field : lst_fields) { 
+			Schema.DescribeFieldResult fieldDesc = field.getDescribe();
+			if (!fieldDesc.isNillable() && !fieldDesc.isAutoNumber() && !fieldDesc.isCalculated() 
+				&& !fieldDesc.isDefaultedOnCreate() && fieldDesc.isCustom()) 
+			{
+				lst_requiredFields.add(fieldDesc);
+			}
+		}
+		return lst_requiredFields;	
+    }
+
 }
