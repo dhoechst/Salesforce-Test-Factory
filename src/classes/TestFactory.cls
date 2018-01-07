@@ -1,8 +1,10 @@
-// Insertion mode should be in a dedicated function and not a param 
 @isTest
 public class TestFactory {
 
-	public static List<Schema.DescribeFieldResult> requiredFields;
+	// Cached metadata structure
+	public static Map<String, List<Schema.DescribeFieldResult>> requiredFieldsMap = new Map<String, List<Schema.DescribeFieldResult>>();
+	public static Map<String, Map<String, Schema.SObjectField>> sobjectToFieldsMap = new Map<String, Map<String, Schema.SObjectField>>();
+	public static Map<String, List<String>> uniqueCustomFields = new Map<String, List<String>>();
 
 	public static SObject createSObject(SObject sObj, Boolean autoSetRequiredFields) {
 		// Check what type of object we are creating and add any defaults that are needed.
@@ -16,14 +18,12 @@ public class TestFactory {
 		return sObj;
 	}
 
-	public static SObject createSObject(SObject sObj, Boolean doInsert, Boolean autoSetRequiredFields) {
+	public static SObject insertSObject(SObject sObj, Boolean autoSetRequiredFields) {
 		SObject retObject = createSObject(sObj, autoSetRequiredFields);
 		if (autoSetRequiredFields) {
 			addRequiredFields(retObject);
 		}
-		if (doInsert) {
-			insert retObject;
-		}
+		insert retObject;
 		return retObject;
 	}
 
@@ -42,14 +42,12 @@ public class TestFactory {
 		return sObj;
 	}
 
-	public static SObject createSObject(SObject sObj, String defaultClassName, Boolean doInsert, Boolean autoSetRequiredFields) {
+	public static SObject insertSObject(SObject sObj, String defaultClassName, Boolean autoSetRequiredFields) {
 		SObject retObject = createSObject(sObj, defaultClassName, autoSetRequiredFields);
 		if (autoSetRequiredFields) {
 			addRequiredFields(retObject);
 		}
-		if (doInsert) {
-			insert retObject;
-		}
+		insert retObject;
 		return retObject;
 	}
 
@@ -57,27 +55,24 @@ public class TestFactory {
 		return createSObjectList(sObj, numberOfObjects, (String)null, autoSetRequiredFields);
 	}
 
-	public static SObject[] createSObjectList(SObject sObj, Integer numberOfObjects, Boolean doInsert, Boolean autoSetRequiredFields) {
+	public static SObject[] insertSObjectList(SObject sObj, Integer numberOfObjects, Boolean autoSetRequiredFields) {
 		SObject[] retList = createSObjectList(sObj, numberOfObjects, (String)null, autoSetRequiredFields);
-		if (doInsert) {
-			insert retList;
-		}
+		insert retList;
 		return retList;
 	}
 
-	public static SObject[] createSObjectList(SObject sObj, Integer numberOfObjects, String defaultClassName, Boolean doInsert, Boolean autoSetRequiredFields) {
+	public static SObject[] insertSObjectList(SObject sObj, Integer numberOfObjects, String defaultClassName, Boolean autoSetRequiredFields) {
 		SObject[] retList = createSObjectList(sObj, numberOfObjects, defaultClassName, autoSetRequiredFields);
-		if (doInsert) {
-			insert retList;
-		}
+		insert retList;
 		return retList;
 	}
 
 	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects, String defaultClassName, Boolean autoSetRequiredFields) {
+		String objectName = String.valueOf(sObj.getSObjectType());
 		SObject[] sObjs = new SObject[] {};
 		SObject newObj;
 
-		// Get one copy of the object
+		// Get one single copy of the object
 		if (defaultClassName != null) {
 			newObj = createSObject(sObj, defaultClassName, autoSetRequiredFields);
 		} 
@@ -85,16 +80,27 @@ public class TestFactory {
 			newObj = createSObject(sObj, autoSetRequiredFields);
 		}
 
+		if (uniqueCustomFields == null || !uniqueCustomFields.containsKey(objectName)) {
+			uniqueCustomFields.put(objectName, getUniqueCustomFields(objectName));
+		}
+
+		List<String> lst_uniqueFields = new List<String>();
 		// Get the name field for the object
 		String nameField = nameFieldMap.get(String.valueOf(sObj.getSObjectType()));
 		if (nameField == null) {
 			nameField = 'Name';
 		}
+		lst_uniqueFields.add(nameField);
 
-		// Clone the object the number of times requested. Increment the name field so each record is unique
+		// Get other unique custom fields for the object
+		lst_uniqueFields.addAll(uniqueCustomFields.get(objectName));
+
+		// Clone the object the number of times requested. Increment the name field + unique fields so each record is unique
 		for (Integer i = 0; i < numberOfObjects; i++) {
 			SObject clonedSObj = newObj.clone(false, true);
-			clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
+			for (String uniqueField : lst_uniqueFields) {
+				clonedSObj.put(uniqueField, (String)clonedSObj.get(uniqueField) + '' + i);
+			}
 			sObjs.add(clonedSObj);
 		}
 		return sObjs;
@@ -162,20 +168,23 @@ public class TestFactory {
 	}
 
 	/**
-	 * The method automatically setups random values for required custom fields for the given object
-	 * But only the fields that were not already populated
-	 * As a first step, only the following types are supported: 'STRING', 'TEXTAREA', 'EMAIL', 'URL'
+	 * The method automatically setups random values for required custom fields for the given sobject.
+	 * But only the fields that were not already populated get a random value.
+	 * For now, only the following types are supported: 'STRING', 'TEXTAREA', 'EMAIL', 'URL'
 	 * More to be supported in the future: base64, currency, Date, Datetime, Double, Integer, Multipicklist, Picklist, percent
 	 * @param  sObj                    sobject token
 	 * @return                         generic sobject for testing purposes, with custom required fields randomly populated
 	 */
 	public static void addRequiredFields(SObject sObj) {
+		String objectName = String.valueOf(sObj.getSObjectType());
 		Map<String, Object> map_populatedFields = sObj.getPopulatedFieldsAsMap();
-		if (requiredFields == null) {
-			requiredFields = getRequiredCustomFields(sObj);
+
+		if (requiredFieldsMap == null || !requiredFieldsMap.containsKey(objectName)) {
+			requiredFieldsMap.put(objectName, getRequiredCustomFields(objectName));
 		}
 
-		for (Schema.DescribeFieldResult fieldDesc : requiredFields) {
+		List<Schema.DescribeFieldResult> lst_requiredFields = requiredFieldsMap.get(objectName);
+		for (Schema.DescribeFieldResult fieldDesc : lst_requiredFields) {
 			Schema.SObjectField fieldToken = fieldDesc.getSObjectField();
 			String currentType = fieldDesc.getType().name().toUpperCase();
 
@@ -216,26 +225,42 @@ public class TestFactory {
         return randomStr; 
     }
 
-    /**
-     * Given a sobject, the method provides the list of required custom fields except formulas, auto-number
-     * and field with already a default value defined
-     * @param  sObj sobject token
-     * @return      List<Schema.DescribeFieldResult> of required custom fields
-     */
-    public static List<Schema.DescribeFieldResult> getRequiredCustomFields(SObject sObj) {
-    	String objectName = String.valueOf(sObj.getSObjectType());
+    public static List<Schema.DescribeFieldResult> getRequiredCustomFields(String objectName) {
 		List<Schema.DescribeFieldResult> lst_requiredFields = new List<Schema.DescribeFieldResult>();
-		List<Schema.SObjectField> lst_fields = Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap().values();
 		
+		if (!sobjectToFieldsMap.containsKey(objectName)) {
+			sobjectToFieldsMap.put(objectName, Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap());
+		}
+
+		List<Schema.SObjectField> lst_fields = sobjectToFieldsMap.get(objectName).values();
 		for(Schema.SObjectField field : lst_fields) { 
 			Schema.DescribeFieldResult fieldDesc = field.getDescribe();
-			if (!fieldDesc.isNillable() && !fieldDesc.isAutoNumber() && !fieldDesc.isCalculated() 
-				&& !fieldDesc.isDefaultedOnCreate() && fieldDesc.isCustom()) 
+			if ( (!fieldDesc.isAutoNumber() && !fieldDesc.isCalculated() && fieldDesc.isCustom()) && 
+				 (!fieldDesc.isNillable() || fieldDesc.isUnique()) 
+			)
 			{
 				lst_requiredFields.add(fieldDesc);
 			}
 		}
 		return lst_requiredFields;	
+    }
+
+    public static List<String> getUniqueCustomFields(String objectName) {
+		List<String> lst_uniqueFields = new List<String>();
+
+		if (!sobjectToFieldsMap.containsKey(objectName)) {
+			sobjectToFieldsMap.put(objectName, Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap());
+		}
+		
+		Map<String, Schema.SObjectField> map_fields = sobjectToFieldsMap.get(objectName);
+		Set<String> set_fieldNames = map_fields.keySet();
+		for(String fieldName : set_fieldNames) { 
+			Schema.DescribeFieldResult fieldDesc = map_fields.get(fieldName).getDescribe();
+			if (fieldDesc.isUnique() && !fieldDesc.isAutoNumber() && fieldDesc.isCustom()) {
+				lst_uniqueFields.add(fieldName);
+			}
+		}
+		return lst_uniqueFields;	
     }
 
 }
