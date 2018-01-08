@@ -1,7 +1,7 @@
 @isTest
 public class TestFactory {
 
-	// Cached metadata structure
+	// Cached metadata structures
 	public static Map<String, List<Schema.DescribeFieldResult>> requiredFieldsMap = new Map<String, List<Schema.DescribeFieldResult>>();
 	public static Map<String, Map<String, Schema.SObjectField>> sobjectToFieldsMap = new Map<String, Map<String, Schema.SObjectField>>();
 	public static Map<String, List<String>> uniqueFieldsMap = new Map<String, List<String>>();
@@ -206,8 +206,7 @@ public class TestFactory {
 	/**
 	 * The method automatically setups random values for required custom fields for the given sobject.
 	 * But only the fields that were not already populated get a random value.
-	 * For now, only the following types are supported: 'STRING', 'TEXTAREA', 'EMAIL', 'URL'
-	 * More to be supported in the future: base64, currency, Date, Datetime, Double, Integer, Multipicklist, Picklist, percent
+	 * For now, only the following types are supported: Base64, EncryptedString, Time, Reference (lookup and master-detail)
 	 * @param  sObj                    sobject token
 	 * @return                         generic sobject for testing purposes, with custom required fields randomly populated
 	 */
@@ -227,19 +226,37 @@ public class TestFactory {
 			// Only generate a random valu when the field is not already populated
 			if (!map_populatedFields.containsKey(String.valueOf(fieldToken))) {
 				Object randomFieldVal;
-				// If current type is String
 				if (currentType == 'STRING' || currentType == 'TEXTAREA') {
 					Integer fieldLength = fieldDesc.getLength() > 4 ? 4 : fieldDesc.getLength();
 					randomFieldVal = getRandomStr(fieldLength);
 				}
-				// If current field type is email
+				else if (currentType == 'CURRENCY' || currentType == 'DOUBLE' || currentType == 'INTEGER' || currentType == 'PERCENT') {
+					randomFieldVal = Math.mod(Math.abs(Crypto.getRandomInteger()), 100);
+				}
 				else if (currentType == 'EMAIL') {
 					randomFieldVal = getRandomStr(4) + '@' + getRandomStr(4) + '.com';
 				}
-				// If current field type is URL
 				else if (currentType == 'URL') {
 					randomFieldVal = 'http://' + getRandomStr(4) + '.com';
 				}
+				else if (currentType == 'DATE') {
+					Integer randomAdditionalMonths = Math.mod(Math.abs(Crypto.getRandomInteger()), 8);
+					randomFieldVal = Date.today().addMonths(randomAdditionalMonths);
+				}
+				else if (currentType == 'DATETIME') {
+					Integer randomAdditionalMonths = Math.mod(Math.abs(Crypto.getRandomInteger()), 8);
+					randomFieldVal = Datetime.now().addMonths(randomAdditionalMonths);
+				}
+				else if (currentType == 'PICKLIST') {
+					List<String> lst_picklistVals = getPicklistVals(objectName, fieldDesc.getName());
+					Integer randomIndex = Math.mod(Math.abs(Crypto.getRandomInteger()), lst_picklistVals.size());
+					randomFieldVal = lst_picklistVals.get(randomIndex);
+				}
+				else if (currentType == 'MULTIPICKLIST') {
+					List<String> lst_picklistVals = getPicklistVals(objectName, fieldDesc.getName());
+					randomFieldVal = String.join(lst_picklistVals, ';');
+				}
+
 				// Finally, populate the record with the required fields
 				sObj.put(fieldToken, randomFieldVal);
 			}	
@@ -263,7 +280,6 @@ public class TestFactory {
 
     public static List<Schema.DescribeFieldResult> getRequiredCustomFields(String objectName) {
 		List<Schema.DescribeFieldResult> lst_requiredFields = new List<Schema.DescribeFieldResult>();
-		
 		if (!sobjectToFieldsMap.containsKey(objectName)) {
 			sobjectToFieldsMap.put(objectName, Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap());
 		}
@@ -283,7 +299,6 @@ public class TestFactory {
 
     public static List<String> getUniqueCustomFields(String objectName) {
 		List<String> lst_uniqueFields = new List<String>();
-
 		if (!sobjectToFieldsMap.containsKey(objectName)) {
 			sobjectToFieldsMap.put(objectName, Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap());
 		}
@@ -298,5 +313,17 @@ public class TestFactory {
 		}
 		return lst_uniqueFields;	
     }
+
+    public static List<String> getPicklistVals(String objectName, String fieldName) {
+		List<String> lst_pickliststrs = new List<String>();
+		if (!sobjectToFieldsMap.containsKey(objectName)) {
+			sobjectToFieldsMap.put(objectName, Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap());
+		}
+		List<Schema.PicklistEntry> lst_picklistVals = sobjectToFieldsMap.get(objectName).get(fieldName).getDescribe().getPicklistValues();
+   		for(Schema.PicklistEntry val : lst_picklistVals) {
+			lst_pickliststrs.add(val.getValue());
+  	 	}       
+   		return lst_pickliststrs;
+	}
 
 }
