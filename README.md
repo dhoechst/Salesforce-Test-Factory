@@ -11,8 +11,11 @@ Main features are:
 - Differentiate insertion and creation methods. If the method name start with "create", then it only creates the record without inserting it into the database. If the method starts with "insert", the record is created and inserted in the database.
 
 Fields will get values following this order:
+
 1- If you input values when calling the method, these values are prioritized and overrite everthing else.
+
 2- If you don't input values, then the TestFactory will look for the defaults and use them (Default as per the original repo logic). 
+
 3- If there is no default, then the TestFactory will automatically populates the fields.
 
 In short, auto-population is used as last resort if the developer doesn't input data and there is no default.
