@@ -4,7 +4,7 @@ public class TestFactory {
 	// Cached metadata structure
 	public static Map<String, List<Schema.DescribeFieldResult>> requiredFieldsMap = new Map<String, List<Schema.DescribeFieldResult>>();
 	public static Map<String, Map<String, Schema.SObjectField>> sobjectToFieldsMap = new Map<String, Map<String, Schema.SObjectField>>();
-	public static Map<String, List<String>> uniqueCustomFields = new Map<String, List<String>>();
+	public static Map<String, List<String>> uniqueFieldsMap = new Map<String, List<String>>();
 
 	public static SObject createSObject(SObject sObj, Boolean autoSetRequiredFields) {
 		// Check what type of object we are creating and add any defaults that are needed.
@@ -25,6 +25,15 @@ public class TestFactory {
 		}
 		insert retObject;
 		return retObject;
+	}
+
+	public static SObject insertSObject(SObject sObj, Boolean autoSetRequiredFields, User usr) {
+		if (usr != null) {
+			System.runAs(usr) {
+				return insertSObject(sObj, autoSetRequiredFields);
+			}
+		}
+		return insertSObject(sObj, autoSetRequiredFields);
 	}
 
 	public static SObject createSObject(SObject sObj, String defaultClassName, Boolean autoSetRequiredFields) {
@@ -51,6 +60,15 @@ public class TestFactory {
 		return retObject;
 	}
 
+	public static SObject insertSObject(SObject sObj, String defaultClassName, Boolean autoSetRequiredFields, User usr) {
+		if (usr != null) {
+			System.runAs(usr) {
+				return insertSObject(sObj, defaultClassName, autoSetRequiredFields);
+			}
+		}
+		return insertSObject(sObj, defaultClassName, autoSetRequiredFields);
+	}
+
 	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects, Boolean autoSetRequiredFields) {
 		return createSObjectList(sObj, numberOfObjects, (String)null, autoSetRequiredFields);
 	}
@@ -61,10 +79,28 @@ public class TestFactory {
 		return retList;
 	}
 
+	public static SObject[] insertSObjectList(SObject sObj, Integer numberOfObjects, Boolean autoSetRequiredFields, User usr) {
+		if (usr != null) {
+			System.runAs(usr) {
+				return insertSObjectList(sObj, numberOfObjects, autoSetRequiredFields);
+			}
+		}
+		return insertSObjectList(sObj, numberOfObjects, autoSetRequiredFields);
+	}
+
 	public static SObject[] insertSObjectList(SObject sObj, Integer numberOfObjects, String defaultClassName, Boolean autoSetRequiredFields) {
 		SObject[] retList = createSObjectList(sObj, numberOfObjects, defaultClassName, autoSetRequiredFields);
 		insert retList;
 		return retList;
+	}
+
+	public static SObject[] insertSObjectList(SObject sObj, Integer numberOfObjects, String defaultClassName, Boolean autoSetRequiredFields, User usr) {
+		if (usr != null) {
+			System.runAs(usr) {
+				return insertSObjectList(sObj, numberOfObjects, defaultClassName, autoSetRequiredFields);
+			}
+		}
+		return insertSObjectList(sObj, numberOfObjects, defaultClassName, autoSetRequiredFields);
 	}
 
 	public static SObject[] createSObjectList(Sobject sObj, Integer numberOfObjects, String defaultClassName, Boolean autoSetRequiredFields) {
@@ -80,8 +116,8 @@ public class TestFactory {
 			newObj = createSObject(sObj, autoSetRequiredFields);
 		}
 
-		if (uniqueCustomFields == null || !uniqueCustomFields.containsKey(objectName)) {
-			uniqueCustomFields.put(objectName, getUniqueCustomFields(objectName));
+		if (!uniqueFieldsMap.containsKey(objectName)) {
+			uniqueFieldsMap.put(objectName, getUniqueCustomFields(objectName));
 		}
 
 		List<String> lst_uniqueFields = new List<String>();
@@ -93,7 +129,7 @@ public class TestFactory {
 		lst_uniqueFields.add(nameField);
 
 		// Get other unique custom fields for the object
-		lst_uniqueFields.addAll(uniqueCustomFields.get(objectName));
+		lst_uniqueFields.addAll(uniqueFieldsMap.get(objectName));
 
 		// Clone the object the number of times requested. Increment the name field + unique fields so each record is unique
 		for (Integer i = 0; i < numberOfObjects; i++) {
@@ -179,7 +215,7 @@ public class TestFactory {
 		String objectName = String.valueOf(sObj.getSObjectType());
 		Map<String, Object> map_populatedFields = sObj.getPopulatedFieldsAsMap();
 
-		if (requiredFieldsMap == null || !requiredFieldsMap.containsKey(objectName)) {
+		if (!requiredFieldsMap.containsKey(objectName)) {
 			requiredFieldsMap.put(objectName, getRequiredCustomFields(objectName));
 		}
 
