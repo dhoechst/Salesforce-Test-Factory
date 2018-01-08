@@ -15,14 +15,14 @@ public class TestFactory {
 		if (Type.forName(defaultClassName) != null) {
 			sObj = createSObject(sObj, defaultClassName, autoSetRequiredFields);
 		}
+		else {
+			sObj = createSObject(sObj, null, autoSetRequiredFields);
+		}
 		return sObj;
 	}
 
 	public static SObject insertSObject(SObject sObj, Boolean autoSetRequiredFields) {
 		SObject retObject = createSObject(sObj, autoSetRequiredFields);
-		if (autoSetRequiredFields) {
-			addRequiredFields(retObject);
-		}
 		insert retObject;
 		return retObject;
 	}
@@ -37,14 +37,15 @@ public class TestFactory {
 	}
 
 	public static SObject createSObject(SObject sObj, String defaultClassName, Boolean autoSetRequiredFields) {
-		// Create an instance of the defaults class so we can get the Map of field defaults
-		Type t = Type.forName(defaultClassName);
-		if (t == null) {
-			Throw new TestFactoryException('Invalid defaults class.');
+		if (defaultClassName != null) {
+			// Create an instance of the defaults class so we can get the Map of field defaults
+			Type t = Type.forName(defaultClassName);
+			if (t == null) {
+				Throw new TestFactoryException('Invalid defaults class.');
+			}
+			FieldDefaults defaults = (FieldDefaults)t.newInstance();
+			addFieldDefaults(sObj, defaults.getFieldDefaults());
 		}
-		FieldDefaults defaults = (FieldDefaults)t.newInstance();
-		addFieldDefaults(sObj, defaults.getFieldDefaults());
-
 		if (autoSetRequiredFields) {
 			addRequiredFields(sObj);
 		}
@@ -256,7 +257,9 @@ public class TestFactory {
 					List<String> lst_picklistVals = getPicklistVals(objectName, fieldDesc.getName());
 					randomFieldVal = String.join(lst_picklistVals, ';');
 				}
-
+				else { // non supporeted field type
+					continue;
+				}
 				// Finally, populate the record with the required fields
 				sObj.put(fieldToken, randomFieldVal);
 			}	
