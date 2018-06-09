@@ -18,7 +18,7 @@ Usage:
     Opportunity o = (Opportunity)TestFactory.createSObject(new Opportunity(AccountId = a.Id));
     
     // You can also specify a specific set of overrides for different scenarios
-    Account a = (Account)TestFactory.createSObject(new Account(), 'TestFactory.AccountDefaults');
+    Account a = (Account)TestFactory.createSObject(new Account(), 'AccountDefaults');
     
     // Finally, get a bunch of records for testing bulk
     Account[] aList = (Account[])TestFactory.createSObjectList(new Account(), 200);

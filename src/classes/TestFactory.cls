@@ -5,9 +5,9 @@ public class TestFactory {
 		// Check what type of object we are creating and add any defaults that are needed.
 		String objectName = String.valueOf(sObj.getSObjectType());
 		// Construct the default values class. Salesforce doesn't allow '__' in class names
-		String defaultClassName = 'TestFactory.' + objectName.replaceAll('__(c|C)$|__', '') + 'Defaults';
+		String defaultClassName = objectName.replaceAll('__(c|C)$|__', '') + 'Defaults';
 		// If there is a class that exists for the default values, then use them
-		if (Type.forName(defaultClassName) != null) {
+		if (Type.forName('TestFactoryDefaults.' + defaultClassName) != null) {
 			sObj = createSObject(sObj, defaultClassName);
 		}
 		return sObj;
@@ -23,7 +23,7 @@ public class TestFactory {
 
 	public static SObject createSObject(SObject sObj, String defaultClassName) {
 		// Create an instance of the defaults class so we can get the Map of field defaults
-		Type t = Type.forName(defaultClassName);
+		Type t = Type.forName('TestFactoryDefaults.' + defaultClassName);
 		if (t == null) {
 			Throw new TestFactoryException('Invalid defaults class.');
 		}
@@ -89,7 +89,7 @@ public class TestFactory {
 	private static void addFieldDefaults(SObject sObj, Map<Schema.SObjectField, Object> defaults) {
 		// Loop through the map of fields and if they weren't specifically assigned, fill them.
 		Map<String, Object> populatedFields = sObj.getPopulatedFieldsAsMap();
-        	for (Schema.SObjectField field : defaults.keySet()) {
+		for (Schema.SObjectField field : defaults.keySet()) {
 			if (!populatedFields.containsKey(String.valueOf(field))) {
 				sObj.put(field, defaults.get(field));
 			}
@@ -107,43 +107,5 @@ public class TestFactory {
 	// Use the FieldDefaults interface to set up values you want to default in for all objects.
 	public interface FieldDefaults {
 		Map<Schema.SObjectField, Object> getFieldDefaults();
-	}
-
-	// To specify defaults for objects, use the naming convention [ObjectName]Defaults.
-	// For custom objects, omit the __c from the Object Name
-
-	public class AccountDefaults implements FieldDefaults {
-		public Map<Schema.SObjectField, Object> getFieldDefaults() {
-			return new Map<Schema.SObjectField, Object> {
-				Account.Name => 'Test Account'
-			};
-		}
-	}
-
-	public class ContactDefaults implements FieldDefaults {
-		public Map<Schema.SObjectField, Object> getFieldDefaults() {
-			return new Map<Schema.SObjectField, Object> {
-				Contact.FirstName => 'First',
-				Contact.LastName => 'Last'
-			};
-		}
-	}
-
-	public class OpportunityDefaults implements FieldDefaults {
-		public Map<Schema.SObjectField, Object> getFieldDefaults() {
-			return new Map<Schema.SObjectField, Object> {
-				Opportunity.Name => 'Test Opportunity',
-				Opportunity.StageName => 'Closed Won',
-				Opportunity.CloseDate => System.today()
-			};
-		}
-	}
-
-	public class CaseDefaults implements FieldDefaults {
-		public Map<Schema.SObjectField, Object> getFieldDefaults() {
-			return new Map<Schema.SObjectField, Object> {
-				Case.Subject => 'Test Case'
-			};
-		}
 	}
 }
