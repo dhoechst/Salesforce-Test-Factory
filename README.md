@@ -27,3 +27,9 @@ Usage:
     // Note the final parameter of true.
     Account a = (Account) TestFactory.createSObject(new Account(), true);
 	Contact c = (Contact) TestFactory.createSObject(new Contact(AccountID = a.Id), true);
+
+
+    // Optionally create apex classes to extend TestFactory and reference them using metadata.
+    // This allows you to use packages, deploying layers on top of the base implementation of TestFactory.
+    // Note - when using multiple apex classes to generate test data, creating multiple defaults
+    //        for the same field could overwrite your expected results when merging packages

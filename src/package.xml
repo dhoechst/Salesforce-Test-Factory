@@ -4,5 +4,9 @@
         <members>TestFactory</members>
         <name>ApexClass</name>
     </types>
-    <version>28.0</version>
+    <types>
+        <members>TestFactory__mdt</members>
+        <name>CustomObject</name>
+    </types>
+    <version>43.0</version>
 </Package>
