@@ -8,7 +8,7 @@ public class TestFactory {
 		String defaultClassName = objectName.replaceAll('__(c|C)$|__', '') + 'Defaults';
 		// If there is a class that exists for the default values, then use them
 		if (Type.forName('TestFactoryDefaults.' + defaultClassName) != null) {
-			sObj = createSObject(sObj, defaultClassName);
+			sObj = createSObject(sObj, 'TestFactoryDefaults.' + defaultClassName);
 		}
 		return sObj;
 	}
@@ -23,7 +23,7 @@ public class TestFactory {
 
 	public static SObject createSObject(SObject sObj, String defaultClassName) {
 		// Create an instance of the defaults class so we can get the Map of field defaults
-		Type t = Type.forName('TestFactoryDefaults.' + defaultClassName);
+		Type t = Type.forName(defaultClassName);
 		if (t == null) {
 			Throw new TestFactoryException('Invalid defaults class.');
 		}
@@ -72,15 +72,18 @@ public class TestFactory {
 		}
 
 		// Get the name field for the object
-		String nameField = nameFieldMap.get(String.valueOf(sObj.getSObjectType()));
+		String nameField = String.valueOf(nameFieldMap.get(sObj.getSObjectType()));
 		if (nameField == null) {
 			nameField = 'Name';
 		}
+        Boolean nameIsAutoNumber = sObj.getSobjectType().getDescribe().fields.getMap().get(nameField).getDescribe().isAutoNumber();
 
 		// Clone the object the number of times requested. Increment the name field so each record is unique
 		for (Integer i = 0; i < numberOfObjects; i++) {
 			SObject clonedSObj = newObj.clone(false, true);
-			clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
+            if (!nameIsAutoNumber) {
+				clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
+            }
 			sObjs.add(clonedSObj);
 		}
 		return sObjs;
@@ -96,10 +99,11 @@ public class TestFactory {
 		}
 	}
 
-	// When we create a list of SObjects, we need to
-	private static Map<String, String> nameFieldMap = new Map<String, String> {
-		'Contact' => 'LastName',
-		'Case' => 'Subject'
+	// When we create a list of SObjects, we need to have a unique field for the insert if there isn't an autonumber field.
+	// Usually we use the Name field, but some objects don't have a name field.
+	private static Map<Schema.SObjectType, Schema.SObjectField> nameFieldMap = new Map<Schema.SObjectType, Schema.SObjectField> {
+		Contact.sObjectType => Contact.LastName,
+		Case.sObjectType => Case.CaseNumber //this is the autonumber field
 	};
 
 	public class TestFactoryException extends Exception {}
