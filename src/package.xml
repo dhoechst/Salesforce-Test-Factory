@@ -2,7 +2,9 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>TestFactory</members>
+        <members>TestFactoryDefaults</members>
+        <members>TestFactoryTest</members>
         <name>ApexClass</name>
     </types>
-    <version>28.0</version>
+    <version>45.0</version>
 </Package>
