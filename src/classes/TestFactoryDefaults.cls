@@ -4,9 +4,9 @@ public class TestFactoryDefaults{
   // To specify defaults for objects, use the naming convention [ObjectName]Defaults.
   // For custom objects, omit the __c from the Object Name
 
-	public class UserDefaults implements TestFactory.FieldDefaults {
-		public Map<Schema.SObjectField, Object> getFieldDefaults() {
-			String lastName = 'Tester';
+  public class UserDefaults implements TestFactory.FieldDefaults {
+    public Map<Schema.SObjectField, Object> getFieldDefaults() {
+      String lastName = 'Tester';
       Integer uniqueInteger = System.now().millisecond();
       return new Map<Schema.SObjectField, Object> {
         User.FirstName         => 'Inigo Montoya',
@@ -20,9 +20,9 @@ public class TestFactoryDefaults{
         User.LanguageLocaleKey => 'en_US',
         User.EmailEncodingKey  => 'UTF-8',
         User.LocaleSidKey      => 'en_US'
-			};
-		}
-	}
+      };
+    }
+  }
 
   public class AccountDefaults implements TestFactory.FieldDefaults {
     public Map<Schema.SObjectField, Object> getFieldDefaults() {
