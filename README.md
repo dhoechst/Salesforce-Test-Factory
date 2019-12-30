@@ -3,10 +3,7 @@ Salesforce-Test-Factory
 
 SObject factory that can be used in unit tests to create test data.
 
-<a href="https://githubsfdeploy.herokuapp.com/?owner=dhoechst&repo=Salesforce-Test-Factory">
-  <img alt="Deploy to Salesforce"
-       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/src/main/webapp/resources/img/deploy.png">
-</a>
+Install as an unlocked package: https://login.salesforce.com/packaging/installPackage.apexp?p0=04t2G000000Y19lQAC
 
 Usage:
 
