@@ -76,12 +76,12 @@ public class TestFactory {
 		if (nameField == null) {
 			nameField = 'Name';
 		}
-        Boolean nameIsAutoNumber = sObj.getSobjectType().getDescribe().fields.getMap().get(nameField).getDescribe().isAutoNumber();
+        Boolean nameIsAutoNumber = sObj.getSobjectType().getDescribe().fields.getMap().get(nameField)?.getDescribe().isAutoNumber();
 
 		// Clone the object the number of times requested. Increment the name field so each record is unique
 		for (Integer i = 0; i < numberOfObjects; i++) {
 			SObject clonedSObj = newObj.clone(false, true);
-            if (!nameIsAutoNumber) {
+            if (nameIsAutoNumber == false) {
 				clonedSObj.put(nameField, (String)clonedSObj.get(nameField) + ' ' + i);
             }
 			sObjs.add(clonedSObj);

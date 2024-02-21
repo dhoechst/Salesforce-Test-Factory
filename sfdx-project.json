@@ -10,7 +10,7 @@
     ],
     "namespace": "",
     "sfdcLoginUrl": "https://login.salesforce.com",
-    "sourceApiVersion": "45.0",
+    "sourceApiVersion": "60.0",
     "packageAliases": {
         "salesforce-test-factory": "0Ho2G000000KyjLSAS",
         "salesforce-test-factory@1.0.0-1": "04t2G000000Y19lQAC"
